@@ -1,36 +1,87 @@
-const fs = require('fs');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-fs.readFile('./hello.txt', (err, data) => {
-    if (err) {
-        console.log('error');
+const app = express();
+
+app.use(bodyParser.json());
+
+const database = {
+    users: [
+        {
+            id: '123',
+            name: 'Jon',
+            email: 'jon@gmail.com',
+            password: 'cookies',
+            entries: 0,
+            joined: new Date(),
+        },
+
+        {
+            id: '124',
+            name: 'Sally',
+            email: 'sally@gmail.com',
+            password: 'banana',
+            entries: 0,
+            joined: new Date(),
+        }
+    ]
+}
+
+app.get('/', (req, res) => {
+    res.send(database.users);
+})
+    ;
+app.post('/signin', (req, res) => {
+    if (req.body.email === database.users[0].email &&
+        req.body.password === database.users[0].password) {
+        res.json('success');
+    } else {
+        res.status(400).json('error logging in');
     }
-
-    console.log(data.toString());
 });
 
-const file = fs.readFileSync('./hello.txt');
-console.log(file.toString());
+app.post('/register', (req, res) => {
+    const { email, name, password } = req.body;
+    database.users.push({
+        id: '125',
+        name: name,
+        email: email,
+        password: password,
+        entries: 0,
+        joined: new Date(),
+    });
+    res.json(database.users[database.users.length - 1]);
+});
 
-// APPEND
-// fs.appendFile('./hello.txt', ' This is so cool!', err => {
-//     if (err) {
-//         console.log(err);
-//     }
-// });
-
-// WRITE NEW FILE
-
-// fs.writeFile('by.txt', 'Sad to see you go', err => {
-//     if (err) {
-//         console.log(err);
-//     }
-// });
-
-// DELETE
-
-fs.unlink('./by.txt', err => {
-    if (err) {
-        console.log(err);
+app.get('/profile/:id', (req, res) => {
+    const { id } = req.params;
+    let found = false;
+    database.users.forEach(user => {
+        if (user.id === id) {
+            found = true;
+            return res.json(user);
+        }
+    });
+    if (!found) {
+        res.status(400).json('Not Found');
     }
-    console.log('Inception');
+});
+
+app.put('/image', (req, res) => {
+    const { id } = req.body;
+    let found = false;
+    database.users.forEach(user => {
+        if (user.id === id) {
+            found = true;
+            user.entries++;
+            return res.json(user.entries);
+        }
+    });
+    if (!found) {
+        res.status(400).json('Not Found');
+    }
+});
+
+app.listen(3000, () => {
+    console.log('App is running on port 3000');
 });
